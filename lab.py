@@ -135,12 +135,13 @@ def add_to_the_phone_book(information):
                 answer = input("Enter 'Yes' if you want to rewrite the record or enter 'No' to skip\n").strip()
                 if answer == "Yes":
                     phoneBook[(name, last_name)] = [date, phone_number]
-                    phone_number[phone_number] = (name, last_name)
+                    used_phone_numbers[phone_number] = (name, last_name)
                     break
                 elif answer == "No":
                     break
         else:
-            phoneBook[(name, last_name)] = [date, phone_number]
+            phoneBook[(name, last_name)] = (date, phone_number)
+            used_phone_numbers[phone_number] = (name, last_name)
 
 
 def print_phone_book(_phoneBook):
@@ -159,7 +160,7 @@ def save():
             print(name, last_name, data, phone_number, sep=";", file=openfile)
 
 
-def search_by_mask(_name, _last_name, _data, _phone_number):
+def search_by_mask(_name = '*', _last_name = '*', _data = '*', _phone_number = '*'):
     result = {}
     if ((check_name(_name) or _name == '*') and (check_name(_last_name) or _last_name == '*')
             and (check_date(_data) or _data == '*') and (check_phone(_phone_number) or _phone_number == '*')):
@@ -169,7 +170,7 @@ def search_by_mask(_name, _last_name, _data, _phone_number):
             _last_name = correct_name(_last_name)
         if _data != '*':
             _data = correct_phone_number(_data)
-        for (name, last_name), (data, phone_number) in phoneBook:
+        for (name, last_name), (data, phone_number) in phoneBook.items():
             if ((name == _name or _name == '*') and
                     (last_name == _last_name or _last_name == '*') and
                     (data == _data or _data == '*') and
@@ -220,7 +221,7 @@ def change():
             answer = input("Enter 'Yes' if you want to change person's 'PHONE NUMBER' or enter 'No' to skip\n").strip()
         if answer == 'Yes':
             _phone_number = input("Enter new 'PHONE NUMBER'\n").strip()
-            while not check_phone(_data):
+            while not check_phone(_phone_number):
                 _phone_number = input("Enter new 'PHONE NUMBER'\n").strip()
             _phone_number = correct_phone_number(_phone_number)
         used_phone_numbers.pop(phone_number)
@@ -262,7 +263,10 @@ if __name__ == '__main__':
         elif operation == "Change":
             change()
         elif operation == "Search":
-            search_by_mask()
+            print("Its an advanced search. To find enter 'Name;Surname;DD.MM.YYYY;Phone number (11 digits)'.")
+            print("If some fields are not important to you, then type '*' in their places")
+            information = input().strip().split(';')
+            search_by_mask(*information)
         elif operation == "Delete":
             delete_by_name_last_name()
         elif operation == "Age":
