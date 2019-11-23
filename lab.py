@@ -32,7 +32,7 @@ def start():
     else:
         while filename is None:
             print("Enter name of the source data file (it will be also used as output file):")
-            filename = input("\n").strip()
+            filename = input().strip()
             try:
                 file = open(filename, 'r')
                 file.close()
@@ -50,7 +50,7 @@ def show_list_of_operations():
 
 
 def check_name(name):
-    if not str.isalpha(name[0]):
+    if len(name) == 0 or not str.isalpha(name[0]):
         print("Incorrect_name 'name'/'last name' format")
         return False
     for char in name:
@@ -82,6 +82,10 @@ def correct_name(name):
     return str.upper(name[0])+name[1:]
 
 
+def correct_phone_number(_phone_number):
+    return _phone_number.replace('+7', '8', 1)
+
+
 def get_entry_date():
     print("You chose to add a new record. To do this enter 'Name;Surname;DD.MM.YYYY;Phone number (11 digits)'")
     information = input(">>> ").strip()
@@ -92,7 +96,7 @@ def delete_by_name_last_name():
     print("You chose to delete a record by name + last name. To do this enter 'Name;Surname")
     information = input(">>> ").strip()
     if len(information) != 2:
-        print("Wrong format")
+        print("Incorrect format")
         return
     name, last_name, date, phone_number = information
     if check_name(name) and check_name(last_name):
@@ -108,12 +112,13 @@ def delete_by_name_last_name():
 def add_to_the_phone_book(information):
     information = information.split(";")
     if len(information) != 4:
-        print("Wrong format")
+        print("Incorrect format")
         return
     name, last_name, date, phone_number = information
     if check_name(name) and check_name(last_name) and check_date(date) and check_phone(phone_number):
         name = correct_name(name)
         last_name = correct_name(last_name)
+        phone_number = correct_phone_number(phone_number)
         if phone_number in used_phone_numbers:
             print("Phone Number %s is already used in the record\n%s;%s;%s;%s" %
                   (phone_number, name, last_name, date, phone_number))
@@ -158,6 +163,12 @@ def search_by_mask(_name, _last_name, _data, _phone_number):
     result = {}
     if ((check_name(_name) or _name == '*') and (check_name(_last_name) or _last_name == '*')
             and (check_date(_data) or _data == '*') and (check_phone(_phone_number) or _phone_number == '*')):
+        if _name != '*':
+            _name = correct_name(_name)
+        if _last_name != '*':
+            _last_name = correct_name(_last_name)
+        if _data != '*':
+            _data = correct_phone_number(_data)
         for (name, last_name), (data, phone_number) in phoneBook:
             if ((name == _name or _name == '*') and
                     (last_name == _last_name or _last_name == '*') and
@@ -168,14 +179,17 @@ def search_by_mask(_name, _last_name, _data, _phone_number):
 
 
 def change():
-    information = input("You chose to change a record. To do this enter 'Name;Surname'\n").strip().split()
+    information = input("You choose to change a record. To do this enter 'Name;Surname'\n").strip().split(';')
     if len(information) != 2:
-        print("Wrong format")
+        print("Incorrect format")
         return
     name, last_name = information
     if check_name(name) and check_name(last_name):
-        correct_name(name)
-        correct_name(last_name)
+        name = correct_name(name)
+        last_name = correct_name(last_name)
+        if (name, last_name) not in phoneBook:
+            print("There is no person '%s;%s' in the phone book" % (name, last_name))
+            return
         data, phone_number = phoneBook[(name, last_name)]
         _name, _last_name, _data, _phone_number = name, last_name, data, phone_number
         answer = input("Enter 'Yes' if you want to change person's 'NAME' or enter 'No' to skip\n").strip()
@@ -185,7 +199,7 @@ def change():
             _name = input("Enter new 'NAME'\n").strip()
             while not check_name(_name):
                 _name = input("Enter new 'NAME'\n").strip()
-            correct_name(_name)
+            _name = correct_name(_name)
         answer = input("Enter 'Yes' if you want to change person's 'LAST NAME' or enter 'No' to skip\n").strip()
         while answer != 'Yes' and answer != 'No':
             answer = input("Enter 'Yes' if you want to change person's 'LAST NAME' or enter 'No' to skip\n").strip()
@@ -193,7 +207,7 @@ def change():
             _last_name = input("Enter new 'LAST NAME'\n").strip()
             while not check_name(_last_name):
                 _last_name = input("Enter new 'LAST NAME'\n").strip()
-            correct_name(_last_name)
+            _last_name = correct_name(_last_name)
         answer = input("Enter 'Yes' if you want to change person's 'BIRTHDAY' or enter 'No' to skip\n").strip()
         while answer != 'Yes' and answer != 'No':
             answer = input("Enter 'Yes' if you want to change person's 'BIRTHDAY' or enter 'No' to skip\n").strip()
@@ -205,9 +219,10 @@ def change():
         while answer != 'Yes' and answer != 'No':
             answer = input("Enter 'Yes' if you want to change person's 'PHONE NUMBER' or enter 'No' to skip\n").strip()
         if answer == 'Yes':
-            _data = input("Enter new 'PHONE NUMBER'\n").strip()
+            _phone_number = input("Enter new 'PHONE NUMBER'\n").strip()
             while not check_phone(_data):
-                _data = input("Enter new 'PHONE NUMBER'\n").strip()
+                _phone_number = input("Enter new 'PHONE NUMBER'\n").strip()
+            _phone_number = correct_phone_number(_phone_number)
         used_phone_numbers.pop(phone_number)
         phoneBook.pop((name, last_name))
         used_phone_numbers[_phone_number] = (_name, _last_name)
@@ -215,14 +230,14 @@ def change():
 
 
 def age_of_person():
-    information = input("You chose to get an age of the person. To do this enter 'Name;Surname'\n").strip().split()
+    information = input("You chose to get an age of the person. To do this enter 'Name;Surname'\n").strip().split(';')
     if len(information) != 2:
-        print("Wrong format")
+        print("Incorrect format")
         return
     name, last_name = information
     if check_name(name) and check_name(last_name):
-        correct_name(name)
-        correct_name(last_name)
+        name = correct_name(name)
+        last_name = correct_name(last_name)
         now = timedelta(time.localtime(0))
         used_time = phoneBook[(name, last_name)][1]
         used_time = time.strptime(used_time, '%d.%m.%Y')
