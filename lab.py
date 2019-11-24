@@ -1,4 +1,5 @@
 import time
+import datetime
 from datetime import timedelta
 import sys
 phoneBook = {}
@@ -160,7 +161,7 @@ def save():
             print(name, last_name, data, phone_number, sep=";", file=openfile)
 
 
-def search_by_mask(_name = '*', _last_name = '*', _data = '*', _phone_number = '*'):
+def search_by_mask(_name='*', _last_name='*', _data='*', _phone_number='*'):
     result = {}
     if ((check_name(_name) or _name == '*') and (check_name(_last_name) or _last_name == '*')
             and (check_date(_data) or _data == '*') and (check_phone(_phone_number) or _phone_number == '*')):
@@ -239,11 +240,15 @@ def age_of_person():
     if check_name(name) and check_name(last_name):
         name = correct_name(name)
         last_name = correct_name(last_name)
-        now = timedelta(time.localtime(0))
-        used_time = phoneBook[(name, last_name)][1]
-        used_time = time.strptime(used_time, '%d.%m.%Y')
-        delta = used_time - now
-        print(delta)
+        if (name, last_name) in phoneBook:
+            now = datetime.datetime.now()
+            now = datetime.date(*(map(int, str(now).split()[0].split('-'))))
+            used_time = list(phoneBook[(name, last_name)][0].split('.'))
+            birthday = datetime.date(int(used_time[2]), int(used_time[1]), int(used_time[0]))
+            delta = str(now - birthday).split(',')[0].split()[0]
+            print(int(delta)//365, "years old")
+        else:
+            print("There is no person '%s;%s' in the phone book" % (name, last_name))
 
 
 def show_list_of_operations():
