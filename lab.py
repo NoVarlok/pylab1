@@ -7,12 +7,17 @@ filename = None
 used_phone_numbers = {}
 possible_operations = {"Add": "Add a new record to the phohebook",
                         "Change": "Change a record in the phonebook",
-                        "Search": "Search for an record in the phonebook",
+                        "Search": "Advanced Search for an record in the phonebook by mask",
                         "Delete": "Delete a record",
-                        "Age": "Get an age of the person", "Quit": "Exit from the program",
+                        "Delete by phone number": "Delete a record with entered phone number",
+                        "Age": "Get an age of the person",
+                        "Nearest birthdays": "Get a list of persons with a birthday in the next 30 days",
+                        "Regarding age": "Get a lists of persons younger, equal and elder than entered years old",
+                        "Search by date": "Get a list of persons with a birthday birthday on the entered day",
                         "Print": "Print content of the phonebook into console",
                         "Save": "Save content of the phonebook into the source file",
-                        "Show operations": "Shows list of possible operations"}
+                        "Show operations": "Shows list of possible operations",
+                        "Quit": "Exit from the program"}
 
 
 def start():
@@ -110,6 +115,20 @@ def delete_by_name_last_name():
             print("There is no such person in the phone book")
 
 
+def delete_by_phone_number():
+    print("You chose to delete a record by phone number. To do this enter phone number (11 digits)")
+    phone_number = input().strip()
+    while not check_phone(phone_number):
+        phone_number = input().strip()
+    phone_number = correct_phone_number(phone_number)
+    if phone_number in used_phone_numbers:
+        deleted_user = used_phone_numbers[phone_number]
+        phoneBook.pop(deleted_user)
+        used_phone_numbers.pop(phone_number)
+    else:
+        print("There is no person with this phone number in the phone book")
+
+
 def add_to_the_phone_book(information):
     information = information.split(";")
     if len(information) != 4:
@@ -190,14 +209,14 @@ def save():
 
 def search_by_mask(_name='*', _last_name='*', _data='*', _phone_number='*'):
     result = {}
-    if ((check_name(_name) or _name == '*') and (check_name(_last_name) or _last_name == '*')
-            and (check_date(_data) or _data == '*') and (check_phone(_phone_number) or _phone_number == '*')):
+    if ((_name == '*' or check_name(_name)) and (_last_name == '*' or check_name(_last_name))
+            and (_data == '*' or check_date(_data)) and (_phone_number == '*' or check_phone(_phone_number))):
         if _name != '*':
             _name = correct_name(_name)
         if _last_name != '*':
             _last_name = correct_name(_last_name)
-        if _data != '*':
-            _data = correct_phone_number(_data)
+        if _phone_number != '*':
+            _phone_number = correct_phone_number(_phone_number)
         for (name, last_name), (data, phone_number) in phoneBook.items():
             if ((name == _name or _name == '*') and
                     (last_name == _last_name or _last_name == '*') and
@@ -306,7 +325,7 @@ def search_by_date():
                 result[(name, last_name)] = (data, phone_number)
         print_phone_book(result)
     else:
-        print("Incorrect format")
+        print("Incorrect format, enter phone number again")
 
 
 def check_near(a: datetime.datetime, b: datetime.datetime):
@@ -366,7 +385,7 @@ def get_by_age():
 
 
 def show_list_of_operations():
-    print("List of operations, which can be used")
+    print("List of operations, which can be used:")
     for operation, description in possible_operations.items():
         print(operation, '->', description)
 
@@ -376,6 +395,7 @@ if __name__ == '__main__':
     start()
     show_list_of_operations()
     while True:
+        print("(Note: name/last name starts from letter, phone number consists of 11 digits and starts from +7 or 8)")
         operation = input("Choose an operation\n").strip()
         if operation == "Add":
             get_entry_date()
@@ -388,6 +408,8 @@ if __name__ == '__main__':
             search_by_mask(*information)
         elif operation == "Delete":
             delete_by_name_last_name()
+        elif operation == "Delete by phone number":
+            delete_by_phone_number()
         elif operation == "Age":
             age_of_person()
         elif operation == "Nearest birthdays":
