@@ -73,7 +73,7 @@ def check_date(date):
 def check_phone(phone_number):
     if phone_number[:2] == "+7":
         phone_number = phone_number.replace('+7', '8', 1)
-    if str.isnumeric(phone_number) and len(phone_number) == 11:
+    if str.isnumeric(phone_number) and len(phone_number) == 11 and phone_number[0] == '8':
         return True
     print("Incorrect_name 'phone number' format")
     return False
@@ -94,12 +94,12 @@ def get_entry_date():
 
 
 def delete_by_name_last_name():
-    print("You chose to delete a record by name + last name. To do this enter 'Name;Surname")
-    information = input(">>> ").strip()
+    print("You chose to delete a record by name + last name. To do this enter 'Name;Surname'")
+    information = input(">>> ").strip().split(';')
     if len(information) != 2:
         print("Incorrect format")
         return
-    name, last_name, date, phone_number = information
+    name, last_name = information
     if check_name(name) and check_name(last_name):
         name = correct_name(name)
         last_name = correct_name(last_name)
@@ -120,33 +120,56 @@ def add_to_the_phone_book(information):
         name = correct_name(name)
         last_name = correct_name(last_name)
         phone_number = correct_phone_number(phone_number)
-        if phone_number in used_phone_numbers:
-            print("Phone Number %s is already used in the record\n%s;%s;%s;%s" %
-                  (phone_number, name, last_name, date, phone_number))
-            print("Do you want to delete it?")
-            while 1:
-                answer = input("Enter 'Yes' if you want to rewrite the record or enter 'No' to skip\n").strip()
-                if answer == "Yes":
-                    deleted_user = used_phone_numbers[phone_number]
-                    phoneBook.pop(deleted_user)
-                    used_phone_numbers.pop(phone_number)
-                elif answer == "No":
-                    return
-        if (name, last_name) in phoneBook:
-            print("Record %s;%s;%s;%s is already in the phonebook" % (name, last_name, date, phone_number))
-            while 1:
-                answer = input("Enter 'Yes' if you want to rewrite the record or enter 'No' to skip\n").strip()
-                if answer == "Yes":
-                    deleted_phone = phoneBook[(name, last_name)]
-                    used_phone_numbers.pop(deleted_phone)
-                    phoneBook[(name, last_name)] = [date, phone_number]
-                    used_phone_numbers[phone_number] = (name, last_name)
-                    break
-                elif answer == "No":
-                    break
-        else:
-            phoneBook[(name, last_name)] = (date, phone_number)
-            used_phone_numbers[phone_number] = (name, last_name)
+        while (name, last_name) in phoneBook:
+            print("Same 'name/last name'")
+            print("Record %s;%s;%s;%s is already in the phonebook" % (name, last_name, *phoneBook[(name, last_name)]))
+            print("Enter:")
+            print("'Rename' to stay record in the phonebook")
+            print("'Replace' to delete old record and add new")
+            print("'Skip' to stop adding of the record")
+            answer = input().strip()
+            while answer != 'Rename' and answer != 'Replace' and answer != 'Skip':
+                print("Incorrect format")
+                answer = input().strip()
+            if answer == "Rename":
+                information = input("Enter new 'name;last_name'\n").strip().split(';')
+                while len(information) != 2 or not check_name(information[0]) or not check_name(information[1]):
+                    print("Incorrect format")
+                    information = input("Enter new 'name;last_name'\n").strip().split(';')
+                name = correct_name(information[0])
+                last_name = correct_name(information[1])
+            elif answer == "Replace":
+                used_phone_numbers.pop(phoneBook[(name, last_name)][1])
+                phoneBook.pop((name, last_name))
+            else:
+                return
+        while phone_number in used_phone_numbers:
+            user = used_phone_numbers[phone_number]
+            print("Same 'phone number'")
+            print("Record %s;%s;%s;%s is already in the phonebook" %
+                  (*user, phoneBook[user][0], phone_number))
+            print("Enter:")
+            print("'Change number' to stay record in the phonebook")
+            print("'Replace' to delete old record and add new")
+            print("'Skip' to stop adding of the record")
+            answer = input().strip()
+            while answer != 'Change number' and answer != 'Replace' and answer != 'Skip':
+                print("Incorrect format")
+                answer = input().strip()
+            if answer == "Change number":
+                information = input("Enter new 'phone number (11 digits)'\n").strip()
+                while not check_phone(information):
+                    print("Incorrect format")
+                    information = input("Enter new 'phone number (11 digits)'\n").strip()
+                phone_number = correct_phone_number(information)
+            elif answer == "Replace":
+                deleted_user = used_phone_numbers[phone_number]
+                used_phone_numbers.pop(phone_number)
+                phoneBook.pop(deleted_user)
+            else:
+                return
+        phoneBook[(name, last_name)] = (date, phone_number)
+        used_phone_numbers[phone_number] = (name, last_name)
 
 
 def print_phone_book(_phoneBook):
@@ -229,10 +252,24 @@ def change():
             while not check_phone(_phone_number):
                 _phone_number = input("Enter new 'PHONE NUMBER'\n").strip()
             _phone_number = correct_phone_number(_phone_number)
-        used_phone_numbers.pop(phone_number)
-        phoneBook.pop((name, last_name))
-        used_phone_numbers[_phone_number] = (_name, _last_name)
-        phoneBook[(_name, _last_name)] = (_data, _phone_number)
+        conflicts = {}
+        if (name, last_name) != (_name, _last_name):
+            if (_name, _last_name) in phoneBook:
+                conflicts[(_name, _last_name)] = phoneBook[(_name, _last_name)]
+        if phone_number != _phone_number:
+            if _phone_number in used_phone_numbers:
+                user = used_phone_numbers[_phone_number]
+                conflicts[user] = phoneBook[user]
+        if len(conflicts) != 0:
+            print("Change '%s;%s;%s;%s' --> '%s;%s;%s;%s' was canceled because of the conflicts with these records:"
+                  % (name, last_name, data, phone_number, _name, _last_name, _data, _phone_number))
+            print_phone_book(conflicts)
+            print("Resolve the conflicts and try again")
+        else:
+            used_phone_numbers.pop(phone_number)
+            phoneBook.pop((name, last_name))
+            used_phone_numbers[_phone_number] = (_name, _last_name)
+            phoneBook[(_name, _last_name)] = (_data, _phone_number)
 
 
 def age_of_person():
@@ -255,8 +292,11 @@ def age_of_person():
             print("There is no person '%s;%s' in the phone book" % (name, last_name))
 
 
-def search_by_date(_day, _month):
+def search_by_date():
+    _day, _month = input("Enter DD.MM\n").strip().split('.')
     if str.isnumeric(_day) and str.isnumeric(_month):
+        _day = int(_day)
+        _month = int(_month)
         result = {}
         for (name, last_name), (data, phone_number) in phoneBook.items():
             birthday = data.split('.')
@@ -354,6 +394,8 @@ if __name__ == '__main__':
             find_nearest_birthdays()
         elif operation == "Regarding age":
             get_by_age()
+        elif operation == "Search by date":
+            search_by_date()
         elif operation == "Print":
             print_phone_book(phoneBook)
         elif operation == "Save":
@@ -366,4 +408,3 @@ if __name__ == '__main__':
         else:
             print("Operation '%s' is not found. Please, used 'Show operations' to see the list of possible operations"
                   % operation)
-
