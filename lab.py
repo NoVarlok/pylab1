@@ -123,11 +123,13 @@ def add_to_the_phone_book(information):
         if phone_number in used_phone_numbers:
             print("Phone Number %s is already used in the record\n%s;%s;%s;%s" %
                   (phone_number, name, last_name, date, phone_number))
-            print("Do you want to replace it by new record?")
+            print("Do you want to delete it?")
             while 1:
                 answer = input("Enter 'Yes' if you want to rewrite the record or enter 'No' to skip\n").strip()
                 if answer == "Yes":
-                    break
+                    deleted_user = used_phone_numbers[phone_number]
+                    phoneBook.pop(deleted_user)
+                    used_phone_numbers.pop(phone_number)
                 elif answer == "No":
                     return
         if (name, last_name) in phoneBook:
@@ -135,6 +137,8 @@ def add_to_the_phone_book(information):
             while 1:
                 answer = input("Enter 'Yes' if you want to rewrite the record or enter 'No' to skip\n").strip()
                 if answer == "Yes":
+                    deleted_phone = phoneBook[(name, last_name)]
+                    used_phone_numbers.pop(deleted_phone)
                     phoneBook[(name, last_name)] = [date, phone_number]
                     used_phone_numbers[phone_number] = (name, last_name)
                     break
@@ -251,6 +255,76 @@ def age_of_person():
             print("There is no person '%s;%s' in the phone book" % (name, last_name))
 
 
+def search_by_date(_day, _month):
+    if str.isnumeric(_day) and str.isnumeric(_month):
+        result = {}
+        for (name, last_name), (data, phone_number) in phoneBook.items():
+            birthday = data.split('.')
+            day = int(birthday[0])
+            month = int(birthday[1])
+            if _day == day and month == _month:
+                result[(name, last_name)] = (data, phone_number)
+        print_phone_book(result)
+    else:
+        print("Incorrect format")
+
+
+def check_near(a: datetime.datetime, b: datetime.datetime):
+    if a.month == b.month:
+        if a.day <= b.day:
+            return True
+    elif a.month + 1 == b.month:
+        if a.day >= b.day:
+            return True
+    elif a.month == 12 and b.month == 1:
+        if a.day >= b.day:
+            return True
+    return False
+
+
+def find_nearest_birthdays():
+    result = {}
+    now = datetime.datetime.now()
+    add = datetime.timedelta(days=30)
+    now = now + add
+    for (name, last_name), (data, phone_number) in phoneBook.items():
+        used_time = phoneBook[(name, last_name)][0].split('.')
+        birthday = datetime.date(int(used_time[2]), int(used_time[1]), int(used_time[0]))
+        if check_near(birthday, now):
+            result[(name, last_name)] = (data, phone_number)
+    print_phone_book(result)
+
+
+def get_by_age():
+    n = input("Enter age\n")
+    while not str.isnumeric(n):
+        print("Incorrect format")
+        n = input("Enter age\n")
+    n = int(n)
+    less = {}
+    equal = {}
+    more = {}
+    for (name, last_name), (data, phone_number) in phoneBook.items():
+        now = datetime.datetime.now()
+        now = datetime.date(*(map(int, str(now).split()[0].split('-'))))
+        used_time = list(phoneBook[(name, last_name)][0].split('.'))
+        birthday = datetime.date(int(used_time[2]), int(used_time[1]), int(used_time[0]))
+        delta = str(now - birthday).split(',')[0].split()[0]
+        delta = int(delta)//365
+        if delta < n:
+            less[(name, last_name)] = (data, phone_number)
+        elif delta == n:
+            equal[(name, last_name)] = (data, phone_number)
+        else:
+            more[(name, last_name)] = (data, phone_number)
+    print("Persons younger than %s years old:" % n)
+    print_phone_book(less)
+    print("Persons %s years old:" % n)
+    print_phone_book(equal)
+    print("Persons elder than %s years old:" % n)
+    print_phone_book(more)
+
+
 def show_list_of_operations():
     print("List of operations, which can be used")
     for operation, description in possible_operations.items():
@@ -276,6 +350,10 @@ if __name__ == '__main__':
             delete_by_name_last_name()
         elif operation == "Age":
             age_of_person()
+        elif operation == "Nearest birthdays":
+            find_nearest_birthdays()
+        elif operation == "Regarding age":
+            get_by_age()
         elif operation == "Print":
             print_phone_book(phoneBook)
         elif operation == "Save":
@@ -286,6 +364,6 @@ if __name__ == '__main__':
             save()
             break
         else:
-            print("Operation %s is not found. Please, used 'Show operations' to see the list of possible operations"
+            print("Operation '%s' is not found. Please, used 'Show operations' to see the list of possible operations"
                   % operation)
 
