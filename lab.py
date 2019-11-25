@@ -1,4 +1,5 @@
 import time
+import datetime
 from datetime import timedelta
 import sys
 phoneBook = {}
@@ -32,7 +33,7 @@ def start():
     else:
         while filename is None:
             print("Enter name of the source data file (it will be also used as output file):")
-            filename = input("\n").strip()
+            filename = input().strip()
             try:
                 file = open(filename, 'r')
                 file.close()
@@ -50,7 +51,7 @@ def show_list_of_operations():
 
 
 def check_name(name):
-    if not str.isalpha(name[0]):
+    if len(name) == 0 or not str.isalpha(name[0]):
         print("Incorrect_name 'name'/'last name' format")
         return False
     for char in name:
@@ -82,6 +83,10 @@ def correct_name(name):
     return str.upper(name[0])+name[1:]
 
 
+def correct_phone_number(_phone_number):
+    return _phone_number.replace('+7', '8', 1)
+
+
 def get_entry_date():
     print("You chose to add a new record. To do this enter 'Name;Surname;DD.MM.YYYY;Phone number (11 digits)'")
     information = input(">>> ").strip()
@@ -92,7 +97,7 @@ def delete_by_name_last_name():
     print("You chose to delete a record by name + last name. To do this enter 'Name;Surname")
     information = input(">>> ").strip()
     if len(information) != 2:
-        print("Wrong format")
+        print("Incorrect format")
         return
     name, last_name, date, phone_number = information
     if check_name(name) and check_name(last_name):
@@ -108,20 +113,23 @@ def delete_by_name_last_name():
 def add_to_the_phone_book(information):
     information = information.split(";")
     if len(information) != 4:
-        print("Wrong format")
+        print("Incorrect format")
         return
     name, last_name, date, phone_number = information
     if check_name(name) and check_name(last_name) and check_date(date) and check_phone(phone_number):
         name = correct_name(name)
         last_name = correct_name(last_name)
+        phone_number = correct_phone_number(phone_number)
         if phone_number in used_phone_numbers:
             print("Phone Number %s is already used in the record\n%s;%s;%s;%s" %
                   (phone_number, name, last_name, date, phone_number))
-            print("Do you want to replace it by new record?")
+            print("Do you want to delete it?")
             while 1:
                 answer = input("Enter 'Yes' if you want to rewrite the record or enter 'No' to skip\n").strip()
                 if answer == "Yes":
-                    break
+                    deleted_user = used_phone_numbers[phone_number]
+                    phoneBook.pop(deleted_user)
+                    used_phone_numbers.pop(phone_number)
                 elif answer == "No":
                     return
         if (name, last_name) in phoneBook:
@@ -129,13 +137,16 @@ def add_to_the_phone_book(information):
             while 1:
                 answer = input("Enter 'Yes' if you want to rewrite the record or enter 'No' to skip\n").strip()
                 if answer == "Yes":
+                    deleted_phone = phoneBook[(name, last_name)]
+                    used_phone_numbers.pop(deleted_phone)
                     phoneBook[(name, last_name)] = [date, phone_number]
-                    phone_number[phone_number] = (name, last_name)
+                    used_phone_numbers[phone_number] = (name, last_name)
                     break
                 elif answer == "No":
                     break
         else:
-            phoneBook[(name, last_name)] = [date, phone_number]
+            phoneBook[(name, last_name)] = (date, phone_number)
+            used_phone_numbers[phone_number] = (name, last_name)
 
 
 def print_phone_book(_phoneBook):
@@ -154,11 +165,17 @@ def save():
             print(name, last_name, data, phone_number, sep=";", file=openfile)
 
 
-def search_by_mask(_name, _last_name, _data, _phone_number):
+def search_by_mask(_name='*', _last_name='*', _data='*', _phone_number='*'):
     result = {}
     if ((check_name(_name) or _name == '*') and (check_name(_last_name) or _last_name == '*')
             and (check_date(_data) or _data == '*') and (check_phone(_phone_number) or _phone_number == '*')):
-        for (name, last_name), (data, phone_number) in phoneBook:
+        if _name != '*':
+            _name = correct_name(_name)
+        if _last_name != '*':
+            _last_name = correct_name(_last_name)
+        if _data != '*':
+            _data = correct_phone_number(_data)
+        for (name, last_name), (data, phone_number) in phoneBook.items():
             if ((name == _name or _name == '*') and
                     (last_name == _last_name or _last_name == '*') and
                     (data == _data or _data == '*') and
@@ -168,14 +185,17 @@ def search_by_mask(_name, _last_name, _data, _phone_number):
 
 
 def change():
-    information = input("You chose to change a record. To do this enter 'Name;Surname'\n").strip().split()
+    information = input("You choose to change a record. To do this enter 'Name;Surname'\n").strip().split(';')
     if len(information) != 2:
-        print("Wrong format")
+        print("Incorrect format")
         return
     name, last_name = information
     if check_name(name) and check_name(last_name):
-        correct_name(name)
-        correct_name(last_name)
+        name = correct_name(name)
+        last_name = correct_name(last_name)
+        if (name, last_name) not in phoneBook:
+            print("There is no person '%s;%s' in the phone book" % (name, last_name))
+            return
         data, phone_number = phoneBook[(name, last_name)]
         _name, _last_name, _data, _phone_number = name, last_name, data, phone_number
         answer = input("Enter 'Yes' if you want to change person's 'NAME' or enter 'No' to skip\n").strip()
@@ -185,7 +205,7 @@ def change():
             _name = input("Enter new 'NAME'\n").strip()
             while not check_name(_name):
                 _name = input("Enter new 'NAME'\n").strip()
-            correct_name(_name)
+            _name = correct_name(_name)
         answer = input("Enter 'Yes' if you want to change person's 'LAST NAME' or enter 'No' to skip\n").strip()
         while answer != 'Yes' and answer != 'No':
             answer = input("Enter 'Yes' if you want to change person's 'LAST NAME' or enter 'No' to skip\n").strip()
@@ -193,7 +213,7 @@ def change():
             _last_name = input("Enter new 'LAST NAME'\n").strip()
             while not check_name(_last_name):
                 _last_name = input("Enter new 'LAST NAME'\n").strip()
-            correct_name(_last_name)
+            _last_name = correct_name(_last_name)
         answer = input("Enter 'Yes' if you want to change person's 'BIRTHDAY' or enter 'No' to skip\n").strip()
         while answer != 'Yes' and answer != 'No':
             answer = input("Enter 'Yes' if you want to change person's 'BIRTHDAY' or enter 'No' to skip\n").strip()
@@ -205,9 +225,10 @@ def change():
         while answer != 'Yes' and answer != 'No':
             answer = input("Enter 'Yes' if you want to change person's 'PHONE NUMBER' or enter 'No' to skip\n").strip()
         if answer == 'Yes':
-            _data = input("Enter new 'PHONE NUMBER'\n").strip()
-            while not check_phone(_data):
-                _data = input("Enter new 'PHONE NUMBER'\n").strip()
+            _phone_number = input("Enter new 'PHONE NUMBER'\n").strip()
+            while not check_phone(_phone_number):
+                _phone_number = input("Enter new 'PHONE NUMBER'\n").strip()
+            _phone_number = correct_phone_number(_phone_number)
         used_phone_numbers.pop(phone_number)
         phoneBook.pop((name, last_name))
         used_phone_numbers[_phone_number] = (_name, _last_name)
@@ -215,19 +236,93 @@ def change():
 
 
 def age_of_person():
-    information = input("You chose to get an age of the person. To do this enter 'Name;Surname'\n").strip().split()
+    information = input("You chose to get an age of the person. To do this enter 'Name;Surname'\n").strip().split(';')
     if len(information) != 2:
-        print("Wrong format")
+        print("Incorrect format")
         return
     name, last_name = information
     if check_name(name) and check_name(last_name):
-        correct_name(name)
-        correct_name(last_name)
-        now = timedelta(time.localtime(0))
-        used_time = phoneBook[(name, last_name)][1]
-        used_time = time.strptime(used_time, '%d.%m.%Y')
-        delta = used_time - now
-        print(delta)
+        name = correct_name(name)
+        last_name = correct_name(last_name)
+        if (name, last_name) in phoneBook:
+            now = datetime.datetime.now()
+            now = datetime.date(*(map(int, str(now).split()[0].split('-'))))
+            used_time = list(phoneBook[(name, last_name)][0].split('.'))
+            birthday = datetime.date(int(used_time[2]), int(used_time[1]), int(used_time[0]))
+            delta = str(now - birthday).split(',')[0].split()[0]
+            print(int(delta)//365, "years old")
+        else:
+            print("There is no person '%s;%s' in the phone book" % (name, last_name))
+
+
+def search_by_date(_day, _month):
+    if str.isnumeric(_day) and str.isnumeric(_month):
+        result = {}
+        for (name, last_name), (data, phone_number) in phoneBook.items():
+            birthday = data.split('.')
+            day = int(birthday[0])
+            month = int(birthday[1])
+            if _day == day and month == _month:
+                result[(name, last_name)] = (data, phone_number)
+        print_phone_book(result)
+    else:
+        print("Incorrect format")
+
+
+def check_near(a: datetime.datetime, b: datetime.datetime):
+    if a.month == b.month:
+        if a.day <= b.day:
+            return True
+    elif a.month + 1 == b.month:
+        if a.day >= b.day:
+            return True
+    elif a.month == 12 and b.month == 1:
+        if a.day >= b.day:
+            return True
+    return False
+
+
+def find_nearest_birthdays():
+    result = {}
+    now = datetime.datetime.now()
+    add = datetime.timedelta(days=30)
+    now = now + add
+    for (name, last_name), (data, phone_number) in phoneBook.items():
+        used_time = phoneBook[(name, last_name)][0].split('.')
+        birthday = datetime.date(int(used_time[2]), int(used_time[1]), int(used_time[0]))
+        if check_near(birthday, now):
+            result[(name, last_name)] = (data, phone_number)
+    print_phone_book(result)
+
+
+def get_by_age():
+    n = input("Enter age\n")
+    while not str.isnumeric(n):
+        print("Incorrect format")
+        n = input("Enter age\n")
+    n = int(n)
+    less = {}
+    equal = {}
+    more = {}
+    for (name, last_name), (data, phone_number) in phoneBook.items():
+        now = datetime.datetime.now()
+        now = datetime.date(*(map(int, str(now).split()[0].split('-'))))
+        used_time = list(phoneBook[(name, last_name)][0].split('.'))
+        birthday = datetime.date(int(used_time[2]), int(used_time[1]), int(used_time[0]))
+        delta = str(now - birthday).split(',')[0].split()[0]
+        delta = int(delta)//365
+        if delta < n:
+            less[(name, last_name)] = (data, phone_number)
+        elif delta == n:
+            equal[(name, last_name)] = (data, phone_number)
+        else:
+            more[(name, last_name)] = (data, phone_number)
+    print("Persons younger than %s years old:" % n)
+    print_phone_book(less)
+    print("Persons %s years old:" % n)
+    print_phone_book(equal)
+    print("Persons elder than %s years old:" % n)
+    print_phone_book(more)
 
 
 def show_list_of_operations():
@@ -247,11 +342,18 @@ if __name__ == '__main__':
         elif operation == "Change":
             change()
         elif operation == "Search":
-            search_by_mask()
+            print("Its an advanced search. To find enter 'Name;Surname;DD.MM.YYYY;Phone number (11 digits)'.")
+            print("If some fields are not important to you, then type '*' in their places")
+            information = input().strip().split(';')
+            search_by_mask(*information)
         elif operation == "Delete":
             delete_by_name_last_name()
         elif operation == "Age":
             age_of_person()
+        elif operation == "Nearest birthdays":
+            find_nearest_birthdays()
+        elif operation == "Regarding age":
+            get_by_age()
         elif operation == "Print":
             print_phone_book(phoneBook)
         elif operation == "Save":
@@ -262,6 +364,6 @@ if __name__ == '__main__':
             save()
             break
         else:
-            print("Operation %s is not found. Please, used 'Show operations' to see the list of possible operations"
+            print("Operation '%s' is not found. Please, used 'Show operations' to see the list of possible operations"
                   % operation)
 
