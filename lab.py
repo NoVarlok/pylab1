@@ -92,14 +92,14 @@ def correct_phone_number(_phone_number):
     return _phone_number.replace('+7', '8', 1)
 
 
-def get_entry_date():
-    print("You chose to add a new record. To do this enter 'Name;Surname;DD.MM.YYYY;Phone number (11 digits)'")
+def get_entry_data():
+    print("You chose to add a new record. To do this enter 'Name;Last Name;DD.MM.YYYY;Phone number (11 digits)'")
     information = input(">>> ").strip()
     add_to_the_phone_book(information)
 
 
 def delete_by_name_last_name():
-    print("You chose to delete a record by name + last name. To do this enter 'Name;Surname'")
+    print("You chose to delete a record by name + last name. To do this enter 'Name;Last Name'")
     information = input(">>> ").strip().split(';')
     if len(information) != 2:
         print("Incorrect format")
@@ -222,12 +222,12 @@ def search_by_mask(_name='*', _last_name='*', _data='*', _phone_number='*'):
                     (last_name == _last_name or _last_name == '*') and
                     (data == _data or _data == '*') and
                     (phone_number == _phone_number or _phone_number == '*')):
-                result[(name, data)] = [data, phone_number]
+                result[(name, last_name)] = [data, phone_number]
         print_phone_book(result)
 
 
 def change():
-    information = input("You choose to change a record. To do this enter 'Name;Surname'\n").strip().split(';')
+    information = input("You choose to change a record. To do this enter 'Name;Last name'\n").strip().split(';')
     if len(information) != 2:
         print("Incorrect format")
         return
@@ -280,7 +280,7 @@ def change():
                 user = used_phone_numbers[_phone_number]
                 conflicts[user] = phoneBook[user]
         if len(conflicts) != 0:
-            print("Change '%s;%s;%s;%s' --> '%s;%s;%s;%s' was canceled because of the conflicts with these records:"
+            print("Change '%s;%s;%s;%s' --> '%s;%s;%s;%s' \nwas canceled because of the conflicts with these records:"
                   % (name, last_name, data, phone_number, _name, _last_name, _data, _phone_number))
             print_phone_book(conflicts)
             print("Resolve the conflicts and try again")
@@ -292,7 +292,7 @@ def change():
 
 
 def age_of_person():
-    information = input("You chose to get an age of the person. To do this enter 'Name;Surname'\n").strip().split(';')
+    information = input("You chose to get an age of the person. To do this enter 'Name;Last name'\n").strip().split(';')
     if len(information) != 2:
         print("Incorrect format")
         return
@@ -398,11 +398,11 @@ if __name__ == '__main__':
         print("(Note: name/last name starts from letter, phone number consists of 11 digits and starts from +7 or 8)")
         operation = input("Choose an operation\n").strip()
         if operation == "Add":
-            get_entry_date()
+            get_entry_data()
         elif operation == "Change":
             change()
         elif operation == "Search":
-            print("Its an advanced search. To find enter 'Name;Surname;DD.MM.YYYY;Phone number (11 digits)'.")
+            print("Its an advanced search. To find enter 'Name;Last name;DD.MM.YYYY;Phone number (11 digits)'.")
             print("If some fields are not important to you, then type '*' in their places")
             information = input().strip().split(';')
             search_by_mask(*information)
